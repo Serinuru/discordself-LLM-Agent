@@ -1,0 +1,12 @@
+{
+    "_comment": "Permissions config. 'id' is the Discord guild (server) ID. 'channels' lists allowed channel IDs for that guild - an EMPTY channels list means NO channels are allowed yet (channels must be explicitly added, empty does NOT mean 'all channels'). A guild not listed here at all is fully denied. 'musicBot.allowed' uses the same guild/channels structure but is checked independently - a channel can be allowed for chat without being allowed for music, or vice versa. 'directMessage' is a single true/false toggle controlling whether the bot responds to DMs at all.",
+    "allowed": [
+        {"id": 0, "channels": []}
+    ],
+    "musicBot": {
+        "allowed": [
+            {"id": 0, "channels": []}
+        ]
+    },
+    "directMessage": true
+}

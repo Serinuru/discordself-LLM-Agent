@@ -1,0 +1,29 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Bot-generated data
+chatHistory/
+*.log
+
+# Downloaded media (if you ever save files locally)
+downloads/
+media/
+
+#old scripts
+a.md
+Modelfile
+test.py
+voice_manager.old.py
+voice_manager.old.2.py
+history_test.py
+permissions.json
+
+# OS junk
+.DS_Store
+Thumbs.db
