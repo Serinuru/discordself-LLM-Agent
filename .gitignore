@@ -1,6 +1,6 @@
 # Secrets
 .env
-
+.gitignore
 # Python
 __pycache__/
 *.pyc
@@ -20,7 +20,7 @@ a.md
 Modelfile
 test.py
 voice_manager.old.py
-voice_manager.old.2.py
+voice_manager.old2.py
 history_test.py
 permissions.json
 
