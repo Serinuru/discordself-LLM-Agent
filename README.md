@@ -48,7 +48,7 @@ A Discord self hosted bot using a local LLM using [Ollama](https://ollama.com) t
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` with your Discord bot token and any settings you want to change (model name, system prompt, history length, etc.). **Never commit your real `.env` file.**
+   Edit `.env` with your Discord user token and any settings you want to change (model name, system prompt, history length, etc.). **Never commit your real `.env` file.**
 
 6. **Run the bot**
    ```bash
@@ -71,7 +71,7 @@ All configuration lives in `.env` (see `.env.example` for the full list of varia
 
 ## Permissions
 
-`permissions.json` controls which guilds/channels the bot is allowed to respond in. Structure:
+`permissions.json` controls which guilds/channels the self bot is allowed to respond in. Structure:
 
 ```json
 {
