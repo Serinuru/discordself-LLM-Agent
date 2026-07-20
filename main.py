@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from url_tools import UrlFetcher
 from image_tools import ImageHandler
+from search_tools import SearchTool
 from history_manager import HistoryHandler
 from voice_manager import VoiceManager
 from message_context import messageContext
@@ -23,6 +24,22 @@ _voice_manager:VoiceManager = None
 _ollamaClient: AsyncClient = None
 _url_fetcher: UrlFetcher = None
 _image_handler: ImageHandler = None
+
+AVAILABLE_TOOLS = {}
+
+async def search_web(query: str) -> str:
+    """Search the web for current, up-to-date information. Use this when a
+    question needs information that might have changed recently, or that
+    you're not confident about from memory - news, current events, recent
+    releases, prices, or anything time-sensitive.
+ 
+    Args:
+        query: The search query to look up
+ 
+    Returns:
+        str: Markdown-formatted search results (titles, links, and snippets)
+    """
+    return await SearchTool.search(query)
 
 def strip_leaked_markup(text: str) -> str:
     text = re.sub(r"</?blockquote>", "", text, flags=re.IGNORECASE)
@@ -38,18 +55,55 @@ def loadJson():
 async def chatOllama(channel_id: int, content_message: str) -> str:
     global _ollamaClient
     global _history
-
-    MODEL = os.getenv("MODEL_NAME") 
-    SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT") 
-    
+ 
+    MODEL = os.getenv("MODEL_NAME")
+    SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT")
+ 
     _history[channel_id].append({"role": "user", "content": content_message})
+ 
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + list(_history[channel_id])
+ 
+    while True:
+        response = await _ollamaClient.chat(
+            model=MODEL,
+            messages=messages,
+            tools=[search_web],
+        )
+        import pprint
+        
+        pprint.pp(response)
 
-    message = [{"role": "system", "content": SYSTEM_PROMPT}] + list(_history[channel_id])
-    response = await _ollamaClient.chat(model=MODEL, messages=message)
-    reply = strip_leaked_markup(response["message"]["content"])
-    
-    _history[channel_id].append({"role": "assistant", "content": reply})
-    return reply
+        print(type(response))
+        print(type(response["message"]))
+        if not response["message"].get("tool_calls"):
+            reply = strip_leaked_markup(response["message"]["content"])
+            _history[channel_id].append({"role": "assistant", "content": reply})
+            return reply
+ 
+        # Model wants to search - append its request, run the tool(s),
+        # append the result(s), then loop back so it can answer for real
+        messages.append(response["message"])
+ 
+        for tool_call in response["message"]["tool_calls"]:
+            function_name = tool_call["function"]["name"]
+            function_to_call = AVAILABLE_TOOLS.get(function_name)
+ 
+            if function_to_call is None:
+                result = f"[error: unknown tool '{function_name}']"
+            else:
+                try:
+                    result = await function_to_call(**tool_call["function"]["arguments"])  # The error is at the search_tools.py
+                    print("TOOL RESULT TYPE:", type(result))
+                    print("TOOL RESULT:")
+                    print(repr(result))
+                except Exception as e:
+                    result = f"[error running {function_name}: {e}]"
+
+            messages.append({
+                "role": "tool",
+                "content": result,
+                "tool_name": function_name,
+            })
 
 async def vertifyGuild(message) -> bool:
     global _permissionsJSON
@@ -81,61 +135,7 @@ async def playMusicChannel(message, isVC=False) -> bool:
             return True
 
     return False
-'''
-async def messageContext(message) -> str:
-    # Reply context — message.reference is None unless this message is a reply,
-    # so we can't touch .resolved without checking first.
-    reply_text = "None"
-    if message.reference is not None:
-        resolved = message.reference.resolved
-        if resolved is not None:
-            reply_text = f"{resolved.author}<{resolved.author.id}>: \"{resolved.content}\""
-        else:
-            # resolved can be None if the original message was deleted or
-            # too old for the cache — message.reference.message_id still exists
-            reply_text = f"[unresolved reply to message id {message.reference.message_id}]"
 
-    # Edited timestamp — None if the message was never edited
-    edited_text = str(message.edited_at) if message.edited_at else "Not edited"
-
-    # Reactions — emoji + count; does NOT include who reacted
-    reactions_text = ", ".join(
-        f"{r.emoji}x{r.count}" for r in message.reactions
-    ) if message.reactions else "None"
-
-    # Forwarded messages put their content in message_snapshots instead of
-    # message.content, which is often empty on the forward itself
-    snapshots_text = "None"
-    if message.message_snapshots:
-        snapshots_text = " | ".join(
-            snap.content for snap in message.message_snapshots if snap.content
-        )
-
-    location = ""
-    if message.guild:
-        location = f"{message.guild.name}<{message.guild.id}> @ {message.channel}"
-    else:
-        location = f"DM @ {message.author}"
-
-    logMessage = f"""[{location}]
-{message.author}<{message.author.id}>: "{message.content}"
-\tType = {message.type}
-\tCreated = {message.created_at}
-\tEdited = {edited_text}
-\tEmbeds = {str(message.embeds)}
-\tAttachments = {str(message.attachments)}
-\tStickers = {str(message.stickers)}
-\tMentions = {str(message.mentions)}
-\tRole Mentions = {str(message.role_mentions)}
-\tMention Everyone = {message.mention_everyone}
-\tReply = {reply_text}
-\tReactions = {reactions_text}
-\tForwarded Content = {snapshots_text}
-"""
-    logMessage += await _url_fetcher.build_context(message)
-    logMessage += await _image_handler.build_context(message)
-    return logMessage
-'''
 class MyClient(discord.Client):
     async def on_ready(self):
         print('Logged on as', self.user)
@@ -189,6 +189,9 @@ def main():
     print(os.getenv("VISION_MODEL_NAME"))
     
     
+    AVAILABLE_TOOLS = {
+        "search_web": search_web,
+    }
 
     _historyHandler = HistoryHandler(max_len=int(os.getenv("HISTORY_LIMIT")))
     _history = _historyHandler.history
