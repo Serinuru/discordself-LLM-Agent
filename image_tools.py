@@ -36,7 +36,7 @@ class ImageHandler:
 
     def __init__(
         self,
-        vision_model: str = "llava",
+        vision_model: str = "qwen3-vl",
         max_bytes: int = 8_000_000,       # ~8MB cap per image
         fetch_timeout: int = 15,
         max_images_per_message: int = 3,

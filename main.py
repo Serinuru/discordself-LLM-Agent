@@ -184,11 +184,13 @@ def main():
 
     load_dotenv()
     loadJson()
+    
     print(os.getenv("SYSTEM_PROMPT"))
     print(os.getenv("VISION_MODEL_NAME"))
+    print(os.getenv("SEARXNG_LOCALHOST"))
 
-    _search_tool = SearchTool()
-    _historyHandler = HistoryHandler(max_len=int(os.getenv("HISTORY_LIMIT")))
+    _search_tool = SearchTool(base_url=os.getenv("SEARXNG_LOCALHOST"))
+    _historyHandler = HistoryHandler(max_len=int(os.getenv("HISTORY_LIMIT")), directory=os.getenv("CHAT_HISTORY"))
     _history = _historyHandler.history
     _ollamaClient = AsyncClient(host=os.getenv("LOCALHOST"))
     _image_handler = ImageHandler(vision_model=os.getenv("VISION_MODEL_NAME"))
