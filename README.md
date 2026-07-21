@@ -105,6 +105,7 @@ image_tools.py       # ImageHandler: describes images via a local vision model
 url_tools.py         # UrlFetcher: fetches and summarizes linked pages
 voice_manager.py     # VoiceManager: auto-join/leave + music playback/queueing
 history_manager.py   # HistoryManager: persists chat history to disk
+search_tools.py      # SearchTool: Searches the web by meta engine (SearXNG)
 ```
 
 ## Known Limitations
