@@ -17,6 +17,7 @@ A Discord self hosted bot using a local LLM using [Ollama](https://ollama.com) t
 - [FFmpeg](https://ffmpeg.org) installed and available on your system `PATH`
 - [Deno](https://deno.com) installed and on `PATH` (used by `yt-dlp` as a JS runtime for YouTube extraction)
 - A Discord user token ([discord.py-self Docs](https://discordpy-self.readthedocs.io/en/latest/authenticating.html))
+- [SearXNG](https://github.com/searxng/searxng) installed seperately (used for web searches) 
 
 ## Setup
 
