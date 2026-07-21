@@ -24,8 +24,7 @@ _voice_manager:VoiceManager = None
 _ollamaClient: AsyncClient = None
 _url_fetcher: UrlFetcher = None
 _image_handler: ImageHandler = None
-
-AVAILABLE_TOOLS = {}
+_search_tool: SearchTool = None
 
 async def search_web(query: str) -> str:
     """Search the web for current, up-to-date information. Use this when a
@@ -39,7 +38,7 @@ async def search_web(query: str) -> str:
     Returns:
         str: Markdown-formatted search results (titles, links, and snippets)
     """
-    return await SearchTool.search(query)
+    return await _search_tool.search(query)
 
 def strip_leaked_markup(text: str) -> str:
     text = re.sub(r"</?blockquote>", "", text, flags=re.IGNORECASE)
@@ -58,7 +57,10 @@ async def chatOllama(channel_id: int, content_message: str) -> str:
  
     MODEL = os.getenv("MODEL_NAME")
     SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT")
- 
+    
+    AVAILABLE_TOOLS = {}
+    AVAILABLE_TOOLS["search_web"] = search_web
+
     _history[channel_id].append({"role": "user", "content": content_message})
  
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + list(_history[channel_id])
@@ -69,12 +71,7 @@ async def chatOllama(channel_id: int, content_message: str) -> str:
             messages=messages,
             tools=[search_web],
         )
-        import pprint
         
-        pprint.pp(response)
-
-        print(type(response))
-        print(type(response["message"]))
         if not response["message"].get("tool_calls"):
             reply = strip_leaked_markup(response["message"]["content"])
             _history[channel_id].append({"role": "assistant", "content": reply})
@@ -87,21 +84,22 @@ async def chatOllama(channel_id: int, content_message: str) -> str:
         for tool_call in response["message"]["tool_calls"]:
             function_name = tool_call["function"]["name"]
             function_to_call = AVAILABLE_TOOLS.get(function_name)
- 
+
+            print(f"Looking for: {repr(function_name)}")
+            print(f"Available keys: {list(AVAILABLE_TOOLS.keys())}")
+
             if function_to_call is None:
                 result = f"[error: unknown tool '{function_name}']"
             else:
                 try:
                     result = await function_to_call(**tool_call["function"]["arguments"])  # The error is at the search_tools.py
-                    print("TOOL RESULT TYPE:", type(result))
-                    print("TOOL RESULT:")
-                    print(repr(result))
+
                 except Exception as e:
                     result = f"[error running {function_name}: {e}]"
-
+            header = "### Search Results" +result
             messages.append({
                 "role": "tool",
-                "content": result,
+                "content": header,
                 "tool_name": function_name,
             })
 
@@ -182,17 +180,14 @@ def main():
     global _historyHandler
     global _history
     global _voice_manager
+    global _search_tool
 
     load_dotenv()
     loadJson()
     print(os.getenv("SYSTEM_PROMPT"))
     print(os.getenv("VISION_MODEL_NAME"))
-    
-    
-    AVAILABLE_TOOLS = {
-        "search_web": search_web,
-    }
 
+    _search_tool = SearchTool()
     _historyHandler = HistoryHandler(max_len=int(os.getenv("HISTORY_LIMIT")))
     _history = _historyHandler.history
     _ollamaClient = AsyncClient(host=os.getenv("LOCALHOST"))

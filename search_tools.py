@@ -13,7 +13,7 @@ settings.yml (search: formats: [html, json]) - see README for setup.
 Usage:
     from search_tool import SearchTool
 
-    search_tool = SearchTool(base_url="http://localhost:6768")
+    search_tool = SearchTool(base_url="http://localhost:8080")
     results_markdown = await search_tool.search("latest news on X")
 """
 
