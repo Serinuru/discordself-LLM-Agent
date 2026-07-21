@@ -8,6 +8,7 @@ A Discord self hosted bot using a local LLM using [Ollama](https://ollama.com) t
  - **Images** &mdash; describes images from Discord attachments or inline URLs using a local vision model `max: 3`.
  - **Link reading** — fetches and summarizes the content of URLs posted in chat (SSRF-guarded) `max: 3`.
  - **Voice/music** — auto-joins/leaves voice channels based on occupancy; plays audio (including full playlists) from a URL via `yt-dlp` + `ffmpeg`
+ - **Web Searching** — Searches the web to keep up to date on recent information.
  - **Persistent memory** — saves conversation history to disk between runs, with incrementing dated save files `default: 15`.
 
 ## Requirements
@@ -68,7 +69,9 @@ All configuration lives in `.env` (see `.env.example` for the full list of varia
 | `SYSTEM_PROMPT` | The bot's personality/behavior instructions |
 | `LOCALHOST` | Ollama's local API address (default `http://localhost:11434`) |
 | `DISCORD_TOKEN` | Your user token from the Discord |
+| `SEARXNG_LOCALHOST` | SearXNG's API to search the web (default `http://localhost:8080`) |
 | `JSON_PATH` | permissions.json.example |
+| `CHAT_HISTORY` | directory to store your chat history |
 
 ## Permissions
 
